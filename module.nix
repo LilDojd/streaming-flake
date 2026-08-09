@@ -6,6 +6,84 @@
 }:
 let
   cfg = config.programs.streaming-obs;
+  profileDirectory = "obs-studio/basic/profiles/Programming";
+  hotkey =
+    key:
+    builtins.toJSON {
+      bindings = [
+        {
+          control = true;
+          shift = true;
+          inherit key;
+        }
+      ];
+    };
+  profile = {
+    General.Name = "Programming";
+    Output = {
+      Mode = "Advanced";
+      FilenameFormatting = "%CCYY-%MM-%DD %hh-%mm-%ss";
+      Reconnect = true;
+      RetryDelay = 2;
+      MaxRetries = 25;
+    };
+    AdvOut = {
+      ApplyServiceSettings = false;
+      UseRescale = false;
+      TrackIndex = 1;
+      Encoder = "obs_nvenc_h264_tex";
+      RecType = "Standard";
+      RecFilePath = "${config.xdg.userDirs.videos}/OBS";
+      RecFormat2 = "mkv";
+      RecUseRescale = false;
+      RecTracks = 7;
+      RecEncoder = "obs_nvenc_h264_tex";
+      AudioEncoder = "ffmpeg_aac";
+      RecAudioEncoder = "ffmpeg_aac";
+      Track1Bitrate = 160;
+      Track2Bitrate = 160;
+      Track3Bitrate = 160;
+    };
+    Video = {
+      BaseCX = 2560;
+      BaseCY = 1440;
+      OutputCX = 2560;
+      OutputCY = 1440;
+      FPSType = 0;
+      FPSCommon = 60;
+      ScaleType = "lanczos";
+      ColorFormat = "NV12";
+      ColorSpace = 709;
+      ColorRange = "Partial";
+      AutoRemux = true;
+    };
+    Audio = {
+      SampleRate = 48000;
+      ChannelSetup = "Stereo";
+    };
+    Hotkeys = {
+      "OBSBasic.StartStreaming" = hotkey "OBS_KEY_F9";
+      "OBSBasic.StopStreaming" = hotkey "OBS_KEY_F9";
+      "OBSBasic.StartRecording" = hotkey "OBS_KEY_F10";
+      "OBSBasic.StopRecording" = hotkey "OBS_KEY_F10";
+    };
+  };
+  streamEncoder = {
+    rate_control = "CBR";
+    bitrate = 8000;
+    keyint_sec = 2;
+    preset = "p6";
+    tune = "hq";
+    multipass = "qres";
+    profile = "high";
+    adaptive_quantization = true;
+    lookahead = false;
+    bf = 2;
+  };
+  recordEncoder = streamEncoder // {
+    rate_control = "CQP";
+    cqp = 20;
+  };
 in
 {
   options.programs.streaming-obs = {
@@ -28,6 +106,12 @@ in
         message = "programs.streaming-obs.twitchStreamKeyFile must be set.";
       }
     ];
+
+    xdg.configFile = {
+      "${profileDirectory}/basic.ini".text = lib.generators.toINI { } profile;
+      "${profileDirectory}/streamEncoder.json".text = builtins.toJSON streamEncoder;
+      "${profileDirectory}/recordEncoder.json".text = builtins.toJSON recordEncoder;
+    };
 
     programs.obs-studio = {
       enable = true;
