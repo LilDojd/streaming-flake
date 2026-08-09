@@ -1,0 +1,172 @@
+{
+  "name": "Programming",
+  "DesktopAudioDevice1": {
+    "name": "Desktop Audio",
+    "uuid": "11111111-1111-4111-8111-111111111111",
+    "id": "pulse_output_capture",
+    "versioned_id": "pulse_output_capture",
+    "settings": { "device_id": "default" },
+    "mixers": 3,
+    "volume": 1.0,
+    "enabled": true,
+    "muted": false,
+    "hotkeys": {}
+  },
+  "AuxAudioDevice1": {
+    "name": "Microphone",
+    "uuid": "22222222-2222-4222-8222-222222222222",
+    "id": "pulse_input_capture",
+    "versioned_id": "pulse_input_capture",
+    "settings": { "device_id": "default" },
+    "mixers": 5,
+    "volume": 1.0,
+    "enabled": true,
+    "muted": false,
+    "hotkeys": {}
+  },
+  "sources": [
+    {
+      "name": "Screen Capture (PipeWire)",
+      "uuid": "33333333-3333-4333-8333-333333333333",
+      "id": "pipewire-screen-capture-source",
+      "versioned_id": "pipewire-screen-capture-source",
+      "settings": { "RestoreToken": "" },
+      "mixers": 0,
+      "volume": 1.0,
+      "enabled": true,
+      "muted": false,
+      "hotkeys": {}
+    },
+    {
+      "name": "Starting Soon Text",
+      "uuid": "44444444-4444-4444-8444-444444444444",
+      "id": "text_ft2_source_v2",
+      "versioned_id": "text_ft2_source_v2",
+      "settings": {
+        "text": "STARTING SOON",
+        "color": 4294967295,
+        "font": { "face": "Sans Serif", "size": 72, "style": "Bold", "flags": 1 }
+      }
+    },
+    {
+      "name": "BRB Text",
+      "uuid": "55555555-5555-4555-8555-555555555555",
+      "id": "text_ft2_source_v2",
+      "versioned_id": "text_ft2_source_v2",
+      "settings": {
+        "text": "BE RIGHT BACK",
+        "color": 4294967295,
+        "font": { "face": "Sans Serif", "size": 72, "style": "Bold", "flags": 1 }
+      }
+    },
+    {
+      "name": "Twitch Chat",
+      "uuid": "99999999-9999-4999-8999-999999999999",
+      "id": "browser_source",
+      "versioned_id": "browser_source",
+      "settings": {
+        "url": "https://nightdev.com/hosted/obschat?channel=yawnere&style=clear&fade=30&bot_activity=false&prevent_clipping=true",
+        "width": 520,
+        "height": 620,
+        "shutdown": true,
+        "restart_when_active": true,
+        "css": "body { background: transparent; margin: 0; overflow: hidden; }\n#chat_box { background: transparent; color: #f8fafc; font: 600 22px sans-serif; }\n.chat_line { background: rgba(2, 6, 23, 0.82); border-radius: 12px; line-height: 1.35; margin: 8px 0; padding: 10px 14px; }"
+      },
+      "mixers": 0,
+      "volume": 1.0,
+      "enabled": true,
+      "muted": false,
+      "hotkeys": {}
+    },
+    {
+      "name": "Starting Soon",
+      "uuid": "66666666-6666-4666-8666-666666666666",
+      "id": "scene",
+      "versioned_id": "scene",
+      "settings": {
+        "items": [
+          {
+            "name": "Starting Soon Text",
+            "source_uuid": "44444444-4444-4444-8444-444444444444",
+            "visible": true,
+            "id": 1,
+            "align": 0,
+            "pos": { "x": 1280.0, "y": 720.0 }
+          }
+        ]
+      },
+      "hotkeys": { "OBSBasic.SelectScene": [] }
+    },
+    {
+      "name": "Programming",
+      "uuid": "77777777-7777-4777-8777-777777777777",
+      "id": "scene",
+      "versioned_id": "scene",
+      "settings": {
+        "items": [
+          {
+            "name": "Screen Capture (PipeWire)",
+            "source_uuid": "33333333-3333-4333-8333-333333333333",
+            "visible": true,
+            "id": 1,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds": { "x": 2560.0, "y": 1440.0 },
+            "pos": { "x": 0.0, "y": 0.0 }
+          },
+          {
+            "name": "Twitch Chat",
+            "source_uuid": "99999999-9999-4999-8999-999999999999",
+            "visible": true,
+            "id": 2,
+            "align": 5,
+            "pos": { "x": 2000.0, "y": 780.0 }
+          }
+        ]
+      },
+      "hotkeys": {
+        "OBSBasic.SelectScene": [
+          { "control": true, "shift": true, "key": "OBS_KEY_F12" }
+        ]
+      }
+    },
+    {
+      "name": "BRB",
+      "uuid": "88888888-8888-4888-8888-888888888888",
+      "id": "scene",
+      "versioned_id": "scene",
+      "settings": {
+        "items": [
+          {
+            "name": "BRB Text",
+            "source_uuid": "55555555-5555-4555-8555-555555555555",
+            "visible": true,
+            "id": 1,
+            "align": 0,
+            "pos": { "x": 1280.0, "y": 720.0 }
+          }
+        ]
+      },
+      "hotkeys": {
+        "OBSBasic.SelectScene": [
+          { "control": true, "shift": true, "key": "OBS_KEY_F11" }
+        ]
+      }
+    }
+  ],
+  "groups": [],
+  "scene_order": [
+    { "name": "Starting Soon" },
+    { "name": "Programming" },
+    { "name": "BRB" }
+  ],
+  "current_scene": "Starting Soon",
+  "current_program_scene": "Starting Soon",
+  "current_transition": "Fade",
+  "transition_duration": 300,
+  "transitions": [],
+  "quick_transitions": [],
+  "saved_projectors": [],
+  "modules": {},
+  "version": 2
+}

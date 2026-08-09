@@ -7,6 +7,7 @@
 let
   cfg = config.programs.streaming-obs;
   profileDirectory = "obs-studio/basic/profiles/Programming";
+  sceneTemplate = ./scenes.json;
   hotkey =
     key:
     builtins.toJSON {
@@ -106,6 +107,35 @@ in
         message = "programs.streaming-obs.twitchStreamKeyFile must be set.";
       }
     ];
+
+    home.activation.installObsScene = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      configDir="${config.xdg.configHome}/obs-studio"
+      sceneDir="$configDir/basic/scenes"
+      sceneFile="$sceneDir/Programming.json"
+      userConfig="$configDir/user.ini"
+
+      if [[ -z "$DRY_RUN_CMD" ]]; then
+        install -d -m 0700 "$sceneDir"
+        restoreToken=""
+        if [[ -f "$sceneFile" ]]; then
+          restoreToken="$(${lib.getExe pkgs.jq} -r \
+            '.sources[] | select(.id == "pipewire-screen-capture-source") | .settings.RestoreToken // ""' \
+            "$sceneFile")"
+        fi
+
+        temporaryScene="$sceneFile.new"
+        ${lib.getExe pkgs.jq} --arg restoreToken "$restoreToken" \
+          '(.sources[] | select(.id == "pipewire-screen-capture-source") | .settings.RestoreToken) = $restoreToken' \
+          ${sceneTemplate} > "$temporaryScene"
+        mv "$temporaryScene" "$sceneFile"
+
+        touch "$userConfig"
+        ${lib.getExe pkgs.crudini} --set "$userConfig" Basic Profile Programming
+        ${lib.getExe pkgs.crudini} --set "$userConfig" Basic ProfileDir Programming
+        ${lib.getExe pkgs.crudini} --set "$userConfig" Basic SceneCollection Programming
+        ${lib.getExe pkgs.crudini} --set "$userConfig" Basic SceneCollectionFile Programming.json
+      fi
+    '';
 
     xdg.configFile = {
       "${profileDirectory}/basic.ini".text = lib.generators.toINI { } profile;
