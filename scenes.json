@@ -38,6 +38,46 @@
       "hotkeys": {}
     },
     {
+      "name": "Synthwave Terrain",
+      "uuid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "id": "browser_source",
+      "versioned_id": "browser_source",
+      "settings": {
+        "is_local_file": true,
+        "local_file": "",
+        "width": 2560,
+        "height": 1440,
+        "fps": 60,
+        "shutdown": true,
+        "restart_when_active": true
+      },
+      "mixers": 0,
+      "volume": 1.0,
+      "enabled": true,
+      "muted": false,
+      "hotkeys": {}
+    },
+    {
+      "name": "Cosmic Strings",
+      "uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "id": "browser_source",
+      "versioned_id": "browser_source",
+      "settings": {
+        "is_local_file": true,
+        "local_file": "",
+        "width": 2560,
+        "height": 1440,
+        "fps": 60,
+        "shutdown": true,
+        "restart_when_active": true
+      },
+      "mixers": 0,
+      "volume": 1.0,
+      "enabled": true,
+      "muted": false,
+      "hotkeys": {}
+    },
+    {
       "name": "Starting Soon Text",
       "uuid": "44444444-4444-4444-8444-444444444444",
       "id": "text_ft2_source_v2",
@@ -56,6 +96,8 @@
       "settings": {
         "text": "BE RIGHT BACK",
         "color": 4294967295,
+        "outline": true,
+        "drop_shadow": true,
         "font": { "face": "Sans Serif", "size": 72, "style": "Bold", "flags": 1 }
       }
     },
@@ -86,10 +128,20 @@
       "settings": {
         "items": [
           {
+            "name": "Synthwave Terrain",
+            "source_uuid": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            "visible": true,
+            "id": 1,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds": { "x": 2560.0, "y": 1440.0 },
+            "pos": { "x": 0.0, "y": 0.0 }
+          },
+          {
             "name": "Starting Soon Text",
             "source_uuid": "44444444-4444-4444-8444-444444444444",
             "visible": true,
-            "id": 1,
+            "id": 2,
             "align": 0,
             "pos": { "x": 1280.0, "y": 720.0 }
           }
@@ -138,10 +190,20 @@
       "settings": {
         "items": [
           {
+            "name": "Cosmic Strings",
+            "source_uuid": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+            "visible": true,
+            "id": 1,
+            "align": 5,
+            "bounds_type": 2,
+            "bounds": { "x": 2560.0, "y": 1440.0 },
+            "pos": { "x": 0.0, "y": 0.0 }
+          },
+          {
             "name": "BRB Text",
             "source_uuid": "55555555-5555-4555-8555-555555555555",
             "visible": true,
-            "id": 1,
+            "id": 2,
             "align": 0,
             "pos": { "x": 1280.0, "y": 720.0 }
           }

@@ -20,6 +20,7 @@ pkgs.runCommand "streaming-obs-module-check"
     nativeBuildInputs = [
       pkgs.gnugrep
       pkgs.jq
+      pkgs.nodejs
     ];
   }
   ''
@@ -41,10 +42,15 @@ pkgs.runCommand "streaming-obs-module-check"
     jq -e '[.scene_order[].name] == ["Starting Soon", "Programming", "BRB"]' "${sceneTemplate}"
     jq -e '.DesktopAudioDevice1.mixers == 3 and .AuxAudioDevice1.mixers == 5' "${sceneTemplate}"
     jq -e '[.sources[].id] | index("pipewire-screen-capture-source") != null' "${sceneTemplate}"
-    jq -e '[.sources[] | select(.id == "browser_source")] | length == 1' "${sceneTemplate}"
+    jq -e '[.sources[] | select(.id == "browser_source")] | length == 3' "${sceneTemplate}"
+    jq -e '.sources[] | select(.name == "Synthwave Terrain") | .settings.width == 2560 and .settings.height == 1440 and .settings.is_local_file' "${sceneTemplate}"
+    jq -e '.sources[] | select(.name == "Cosmic Strings") | .settings.width == 2560 and .settings.height == 1440 and .settings.is_local_file' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Twitch Chat") | .settings.url == "https://nightdev.com/hosted/obschat?channel=yawnere&style=clear&fade=30&bot_activity=false&prevent_clipping=true"' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Twitch Chat") | .settings.width == 520 and .settings.height == 620 and .settings.shutdown and .settings.restart_when_active' "${sceneTemplate}"
+    jq -e '.sources[] | select(.name == "BRB Text") | .settings.outline and .settings.drop_shadow' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Programming") | [.settings.items[] | select(.source_uuid == "99999999-9999-4999-8999-999999999999" and .pos.x == 2000 and .pos.y == 780)] | length == 1' "${sceneTemplate}"
+    jq -e '.sources[] | select(.name == "Starting Soon") | [.settings.items[].source_uuid] == ["aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "44444444-4444-4444-8444-444444444444"]' "${sceneTemplate}"
+    jq -e '.sources[] | select(.name == "BRB") | [.settings.items[].source_uuid] == ["bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "55555555-5555-4555-8555-555555555555"]' "${sceneTemplate}"
     jq -e '[.sources[] | select(.name == "Starting Soon" or .name == "BRB") | .settings.items[].source_uuid] | index("99999999-9999-4999-8999-999999999999") == null' "${sceneTemplate}"
     grep -q 'RestoreToken' "${sceneActivation}"
     grep -q 'SceneCollection.*Programming' "${sceneActivation}"
@@ -62,6 +68,15 @@ pkgs.runCommand "streaming-obs-module-check"
     DRY_RUN_CMD= ${pkgs.runtimeShell} "$activation"
     jq -e '.sources[] | select(.id == "pipewire-screen-capture-source") | .settings.RestoreToken == "portal-token-123"' \
       "$sceneFile"
+    startingSoonShader="$(jq -r '.sources[] | select(.name == "Synthwave Terrain") | .settings.local_file' "$sceneFile")"
+    brbShader="$(jq -r '.sources[] | select(.name == "Cosmic Strings") | .settings.local_file' "$sceneFile")"
+    test -r "$startingSoonShader"
+    test -r "$brbShader"
+    node --check "$(dirname "$startingSoonShader")/runner.js"
+    node --check "$(dirname "$startingSoonShader")/shaders.js"
+    grep -q 'synthwaveSkyFragment' "$(dirname "$startingSoonShader")/runner.js"
+    grep -q 'shockwavePhase' "$(dirname "$startingSoonShader")/runner.js"
+    grep -q 'KMartianov/shader-desk' "$(dirname "$startingSoonShader")/ATTRIBUTION"
 
     printf '[Basic]\nProfile=DryRunSentinel\n' > "$userConfig"
     cp "$sceneFile" scene.before

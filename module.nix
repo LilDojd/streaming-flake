@@ -1,3 +1,4 @@
+{ shaderDesk }:
 {
   config,
   lib,
@@ -8,6 +9,7 @@ let
   cfg = config.programs.streaming-obs;
   profileDirectory = "obs-studio/basic/profiles/Programming";
   sceneTemplate = ./scenes.json;
+  shaderAssets = import ./shader-assets.nix { inherit pkgs shaderDesk; };
   hotkey =
     key:
     builtins.toJSON {
@@ -124,8 +126,13 @@ in
         fi
 
         temporaryScene="$sceneFile.new"
-        ${lib.getExe pkgs.jq} --arg restoreToken "$restoreToken" \
-          '(.sources[] | select(.id == "pipewire-screen-capture-source") | .settings.RestoreToken) = $restoreToken' \
+        ${lib.getExe pkgs.jq} \
+          --arg restoreToken "$restoreToken" \
+          --arg synthwaveShader "${shaderAssets}/synthwave.html" \
+          --arg cosmicShader "${shaderAssets}/cosmic.html" \
+          '(.sources[] | select(.id == "pipewire-screen-capture-source") | .settings.RestoreToken) = $restoreToken |
+           (.sources[] | select(.name == "Synthwave Terrain") | .settings.local_file) = $synthwaveShader |
+           (.sources[] | select(.name == "Cosmic Strings") | .settings.local_file) = $cosmicShader' \
           ${sceneTemplate} > "$temporaryScene"
         mv "$temporaryScene" "$sceneFile"
 
