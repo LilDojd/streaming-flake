@@ -3,6 +3,7 @@ let
   cfg = testHome.config;
   sceneTemplate = ./scenes.json;
   sceneActivation = pkgs.writeText "install-obs-scene" cfg.home.activation.installObsScene.data;
+  twitchActivationScript = pkgs.writeText "write-twitch-service" cfg.home.activation.writeTwitchService.data;
   expectedPlugins = with pkgs.obs-studio-plugins; [
     obs-pipewire-audio-capture
     obs-wayland-hotkeys
@@ -69,5 +70,60 @@ pkgs.runCommand "streaming-obs-module-check"
     cmp scene.before "$sceneFile"
     cmp user.before "$userConfig"
     test ! -e "$sceneFile.new"
+
+    twitchActivation="$PWD/write-twitch-service"
+    twitchConfigDir="$PWD/twitch-config"
+    twitchProfileDir="$twitchConfigDir/obs-studio/basic/profiles/Programming"
+    twitchServiceFile="$twitchProfileDir/service.json"
+    dummyKeyFile="$PWD/dummy-twitch-key"
+    substitute "${twitchActivationScript}" "$twitchActivation" \
+      --replace-fail "${cfg.xdg.configHome}" "$twitchConfigDir" \
+      --replace-fail "/run/agenix/twitchStreamKey" "$dummyKeyFile"
+
+    DRY_RUN_CMD=echo ${pkgs.runtimeShell} "$twitchActivation"
+    test ! -e "$twitchConfigDir"
+
+    expectTwitchFailure() {
+      expectedError="$1"
+      rm -f "$twitchServiceFile" "$twitchServiceFile.new"
+      if DRY_RUN_CMD= ${pkgs.runtimeShell} "$twitchActivation" > twitch.stdout 2> twitch.stderr; then
+        printf 'Expected Twitch activation failure: %s\n' "$expectedError" >&2
+        return 1
+      fi
+      printf '%s\n' "$expectedError" > twitch.expected
+      cmp twitch.expected twitch.stderr
+      test ! -s twitch.stdout
+      test ! -e "$twitchServiceFile"
+      test ! -e "$twitchServiceFile.new"
+    }
+
+    rm -f "$dummyKeyFile"
+    expectTwitchFailure "Twitch stream key is not readable: $dummyKeyFile"
+
+    printf '%s\n' 'unreadable-key-content' > "$dummyKeyFile"
+    chmod 000 "$dummyKeyFile"
+    expectTwitchFailure "Twitch stream key is not readable: $dummyKeyFile"
+    chmod 600 "$dummyKeyFile"
+
+    : > "$dummyKeyFile"
+    expectTwitchFailure "Twitch stream key is empty: $dummyKeyFile"
+
+    printf '\r\n' > "$dummyKeyFile"
+    expectTwitchFailure "Twitch stream key is empty: $dummyKeyFile"
+
+    printf 'dummy-\r\nstream-key\r\n' > "$dummyKeyFile"
+    DRY_RUN_CMD= ${pkgs.runtimeShell} "$twitchActivation"
+    jq -e '.type == "rtmp_common" and .settings == {
+      service: "Twitch",
+      server: "auto",
+      key: "dummy-stream-key",
+      protocol: "RTMP"
+    }' "$twitchServiceFile"
+    test "$(stat -c %a "$twitchServiceFile")" = 600
+    test ! -e "$twitchServiceFile.new"
+    test ! -e "${cfg.home-files}/.config/obs-studio/basic/profiles/Programming/service.json"
+    if grep -R -q 'live_' "${cfg.home-files}"; then
+      exit 1
+    fi
     touch "$out"
   ''

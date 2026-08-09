@@ -137,6 +137,43 @@ in
       fi
     '';
 
+    home.activation.writeTwitchService = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      if [[ -z "$DRY_RUN_CMD" ]]; then
+        keyFile=${lib.escapeShellArg cfg.twitchStreamKeyFile}
+        profileDir="${config.xdg.configHome}/${profileDirectory}"
+        serviceFile="$profileDir/service.json"
+        temporaryService="$profileDir/service.json.new"
+
+        if [[ ! -r "$keyFile" ]]; then
+          printf 'Twitch stream key is not readable: %s\n' "$keyFile" >&2
+          exit 1
+        fi
+
+        twitchKey="$(<"$keyFile")"
+        twitchKey="''${twitchKey//$'\r'/}"
+        twitchKey="''${twitchKey//$'\n'/}"
+        if [[ -z "$twitchKey" ]]; then
+          printf 'Twitch stream key is empty: %s\n' "$keyFile" >&2
+          exit 1
+        fi
+
+        install -d -m 0700 "$profileDir"
+        umask 077
+        printf '%s' "$twitchKey" | ${lib.getExe pkgs.jq} -Rs '{
+          type: "rtmp_common",
+          settings: {
+            service: "Twitch",
+            server: "auto",
+            key: .,
+            protocol: "RTMP"
+          }
+        }' > "$temporaryService"
+        unset twitchKey
+        chmod 0600 "$temporaryService"
+        mv "$temporaryService" "$serviceFile"
+      fi
+    '';
+
     xdg.configFile = {
       "${profileDirectory}/basic.ini".text = lib.generators.toINI { } profile;
       "${profileDirectory}/streamEncoder.json".text = builtins.toJSON streamEncoder;
