@@ -1,4 +1,3 @@
-{ shaderDesk }:
 {
   config,
   lib,
@@ -9,7 +8,7 @@ let
   cfg = config.programs.streaming-obs;
   profileDirectory = "obs-studio/basic/profiles/Programming";
   sceneTemplate = ./scenes.json;
-  shaderAssets = import ./shader-assets.nix { inherit pkgs shaderDesk; };
+  shaderAssets = import ./shader-assets.nix { inherit pkgs; };
   hotkey =
     key:
     builtins.toJSON {

@@ -1,0 +1,8 @@
+Vendored from Shader Desk revision c63d758336962a9097f0b6bc3c8f1a5b61edbddb:
+https://github.com/KMartianov/shader-desk
+
+- terrain_vert.glsl and terrain_frag.glsl: KMartianov / Shader Desk (MPL-2.0)
+- cosmic_strings.glsl: Kazoops; Shader Desk port from
+  https://openprocessing.org/@Kazoops/2983233 (CC BY-NC-SA 4.0)
+
+See LICENSE.shader-desk for the full upstream licensing terms.

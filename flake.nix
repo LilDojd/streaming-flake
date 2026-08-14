@@ -7,10 +7,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    shader-desk = {
-      url = "github:KMartianov/shader-desk";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -23,10 +19,7 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      shaderAssets = import ./shader-assets.nix {
-        inherit pkgs;
-        shaderDesk = inputs.shader-desk;
-      };
+      shaderAssets = import ./shader-assets.nix { inherit pkgs; };
       testHome = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [
@@ -46,7 +39,7 @@
       };
     in
     {
-      homeManagerModules.default = import ./module.nix { shaderDesk = inputs.shader-desk; };
+      homeManagerModules.default = import ./module.nix;
       checks.${system}.default = import ./check.nix {
         inherit pkgs testHome;
       };
