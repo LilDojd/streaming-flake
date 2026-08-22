@@ -13,7 +13,6 @@ let
   disabledWebSocketActivationScript = pkgs.writeText "disable-obs-websocket" recordingCfg.home.activation.writeObsWebSocket.data;
   expectedPlugins = with pkgs.obs-studio-plugins; [
     obs-pipewire-audio-capture
-    obs-wayland-hotkeys
     obs-source-record
     obs-composite-blur
   ];
@@ -204,6 +203,9 @@ pkgs.runCommand "streaming-obs-module-check"
         --argjson micFiltersEnabled true \
         --argjson cleanRecordingEnabled true \
         --argjson showCursor true \
+        --argjson shaderWidth 1920 \
+        --argjson shaderHeight 1080 \
+        --argjson shaderFps 30 \
         --argjson micFilters "$(jq -c '.AuxAudioDevice1.filters' ${sceneTemplate})" \
         --argjson cleanRecordingFilter "$(jq -c '.sources[] | select(.name == "[Component] Primary Monitor") | .filters[0]' ${sceneTemplate})" \
         --argjson width 2560 \
@@ -226,6 +228,8 @@ pkgs.runCommand "streaming-obs-module-check"
 
     startingSoonShader="$(jq -r '.sources[] | select(.name == "Synthwave Terrain") | .settings.local_file' "$sceneFile")"
     brbShader="$(jq -r '.sources[] | select(.name == "Cosmic Strings") | .settings.local_file' "$sceneFile")"
+    jq -e 'all(.sources[] | select(.name == "Synthwave Terrain" or .name == "Cosmic Strings");
+      .settings.width == 1920 and .settings.height == 1080 and .settings.fps == 30)' "$sceneFile"
     test -r "$startingSoonShader"
     test -r "$brbShader"
     node --check "$(dirname "$startingSoonShader")/runner.js"

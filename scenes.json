@@ -125,8 +125,8 @@
       "settings": {
         "is_local_file": true,
         "local_file": "",
-        "width": 2560,
-        "height": 1440,
+        "width": 1920,
+        "height": 1080,
         "fps": 30,
         "shutdown": true,
         "restart_when_active": true
@@ -145,8 +145,8 @@
       "settings": {
         "is_local_file": true,
         "local_file": "",
-        "width": 2560,
-        "height": 1440,
+        "width": 1920,
+        "height": 1080,
         "fps": 30,
         "shutdown": true,
         "restart_when_active": true

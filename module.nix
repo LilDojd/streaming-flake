@@ -106,7 +106,6 @@ let
   ) cfg.extraRecordEncoderSettings;
   defaultPlugins = with pkgs.obs-studio-plugins; [
     obs-pipewire-audio-capture
-    obs-wayland-hotkeys
     obs-source-record
     obs-composite-blur
   ];
@@ -709,6 +708,9 @@ in
               --argjson micFiltersEnabled ${lib.boolToString cfg.audio.microphone.filters.enable} \
               --argjson cleanRecordingEnabled ${lib.boolToString cfg.cleanRecording.enable} \
               --argjson showCursor ${lib.boolToString cfg.accessibility.showCursor} \
+              --argjson shaderWidth ${toString cfg.video.outputWidth} \
+              --argjson shaderHeight ${toString cfg.video.outputHeight} \
+              --argjson shaderFps ${toString (if cfg.video.fps < 30 then cfg.video.fps else 30)} \
               --argjson micFilters ${lib.escapeShellArg (builtins.toJSON microphoneFilters)} \
               --argjson cleanRecordingFilter ${lib.escapeShellArg (builtins.toJSON cleanRecordingFilter)} \
               --argjson width ${toString cfg.video.baseWidth} \

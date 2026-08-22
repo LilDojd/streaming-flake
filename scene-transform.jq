@@ -101,9 +101,15 @@ end |
 (.sources[] | select(.uuid == "cccccccc-cccc-4ccc-8ccc-cccccccccccc") | .settings.RestoreToken) =
   $secondaryRestoreToken |
 (.sources[] | select(.name == "Synthwave Terrain") | .settings) |=
-  (.local_file = $synthwaveShader | .width = $width | .height = $height) |
+  (.local_file = $synthwaveShader |
+    .width = $shaderWidth |
+    .height = $shaderHeight |
+    .fps = $shaderFps) |
 (.sources[] | select(.name == "Cosmic Strings") | .settings) |=
-  (.local_file = $cosmicShader | .width = $width | .height = $height) |
+  (.local_file = $cosmicShader |
+    .width = $shaderWidth |
+    .height = $shaderHeight |
+    .fps = $shaderFps) |
 (.sources[] | select(.name == "Privacy Background") | .settings) |=
   (.width = $width | .height = $height) |
 (.sources[] | select(.name == "Intermission Text Backplate") | .settings) |=
