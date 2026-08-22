@@ -26,6 +26,21 @@ Twitch service configuration.
       channel = "my_channel";
       chat.enable = true;
     };
+
+    webSocket = {
+      enable = true;
+      passwordFile = "/run/agenix/obsWebSocketPassword";
+    };
+
+    alerts = {
+      enable = true;
+      urlFile = "/run/agenix/streamAlertsUrl";
+    };
+
+    accessibility = {
+      captions.enable = true;
+      keystrokeCallouts.enable = true;
+    };
   };
 }
 ```
@@ -48,6 +63,52 @@ only fields managed by the module, such as shader paths, dimensions, and chat
 settings. Set `scenes.overwrite = true` to restore the bundled template; the
 previous collection is saved as `Programming.json.backup` by default.
 
+## Scenes and controls
+
+The collection contains reusable component scenes for the primary display,
+secondary display, and stream overlays. Public scenes and their emergency
+hotkeys are:
+
+- `Second Monitor`: `Ctrl+Shift+F7`
+- `Privacy`: `Ctrl+Shift+F8`
+- streaming start/stop: `Ctrl+Shift+F9`
+- recording start/stop: `Ctrl+Shift+F10`
+- `BRB`: `Ctrl+Shift+F11`
+- `Programming`: `Ctrl+Shift+F12`
+
+After first activation, select each PipeWire capture source once in OBS and
+choose the intended display. Their independent portal restore tokens survive
+later activations and template upgrades.
+
+`streaming-obs-control` provides authenticated OBS WebSocket v5 commands:
+
+```console
+streaming-obs-control scene privacy
+streaming-obs-control scene live
+streaming-obs-control scene second
+streaming-obs-control mic toggle
+streaming-obs-control clean-record start
+streaming-obs-control callout "Ctrl+K — command palette"
+```
+
+Privacy control switches scenes before muting the microphone and stopping the
+clean recording. The direct F8 scene hotkey remains available if WebSocket is
+down, but it is visual privacy only: it cannot mute the microphone or stop a
+Source Record session without WebSocket.
+
+## Audio, clean recordings, and accessibility
+
+The microphone defaults to RNNoise, an expander, a compressor, and a limiter.
+Their thresholds are starting points and should be tuned using a local test
+recording. The Source Record plugin records `[Component] Primary Monitor`
+without chat, alerts, captions, or keystroke callouts.
+
+Caption text is read from a transient runtime file. An external caption
+producer should atomically replace that UTF-8 file. Keystroke callouts are
+explicit messages sent through `streaming-obs-control`; global keyboard logging
+is intentionally not enabled. Alert widget URLs are also read at activation
+from a runtime file so their tokens never enter the Nix store.
+
 ## Customization
 
 Common options include:
@@ -57,6 +118,8 @@ Common options include:
 - `video.baseWidth`, `video.baseHeight`, `video.outputWidth`,
   `video.outputHeight`, and `video.fps`
 - `twitch.channel`, `twitch.chat.url`, and `twitch.chat.css`
+- `secondMonitor`, `privacy`, `cleanRecording`, and `audio.microphone.filters`
+- `alerts`, `accessibility`, and `webSocket`
 - `extraPlugins`
 - `extraProfileSettings`, `extraStreamEncoderSettings`, and
   `extraRecordEncoderSettings`
