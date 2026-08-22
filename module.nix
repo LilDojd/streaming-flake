@@ -314,6 +314,7 @@ in
               --arg chatUrl ${lib.escapeShellArg chatUrl} \
               --arg chatCss ${lib.escapeShellArg cfg.twitch.chat.css} \
               --argjson chatEnabled ${lib.boolToString cfg.twitch.chat.enable} \
+              --slurpfile template ${sceneTemplate} \
               --argjson width ${toString cfg.video.baseWidth} \
               --argjson height ${toString cfg.video.baseHeight} \
               '.name = $collectionName |
@@ -322,6 +323,14 @@ in
                (.sources[] | select(.name == "Cosmic Strings") | .settings) |=
                  (.local_file = $cosmicShader | .width = $width | .height = $height) |
                if $chatEnabled then
+                 (if any(.sources[]; .name == "Twitch Chat") then . else
+                   .sources += [($template[0].sources[] | select(.name == "Twitch Chat"))]
+                 end) |
+                 (.sources[] | select(.name == "Programming") | .settings.items) |=
+                   (if any(.[]; .source_uuid == "99999999-9999-4999-8999-999999999999") then . else
+                     . + [($template[0].sources[] | select(.name == "Programming") |
+                       .settings.items[] | select(.source_uuid == "99999999-9999-4999-8999-999999999999"))]
+                   end) |
                  (.sources[] | select(.name == "Twitch Chat") | .settings) |=
                    (.url = $chatUrl | .css = $chatCss)
                else

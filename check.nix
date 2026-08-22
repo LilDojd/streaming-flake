@@ -59,7 +59,7 @@ pkgs.runCommand "streaming-obs-module-check"
     jq -e '[.sources[] | select(.id == "browser_source")] | length == 3' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Synthwave Terrain") | .settings.width == 2560 and .settings.height == 1440 and .settings.is_local_file' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Cosmic Strings") | .settings.width == 2560 and .settings.height == 1440 and .settings.is_local_file' "${sceneTemplate}"
-    jq -e '.sources[] | select(.name == "Twitch Chat") | .settings.url == "https://nightdev.com/hosted/obschat?channel=yawnere&style=clear&fade=30&bot_activity=false&prevent_clipping=true"' "${sceneTemplate}"
+    jq -e '.sources[] | select(.name == "Twitch Chat") | .settings.url == ""' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Twitch Chat") | .settings.width == 520 and .settings.height == 620 and .settings.shutdown and .settings.restart_when_active' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "BRB Text") | .settings.outline and .settings.drop_shadow' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Programming") | [.settings.items[] | select(.source_uuid == "99999999-9999-4999-8999-999999999999" and .pos.x == 2000 and .pos.y == 780)] | length == 1' "${sceneTemplate}"
@@ -78,7 +78,10 @@ pkgs.runCommand "streaming-obs-module-check"
 
     mkdir -p "$(dirname "$sceneFile")"
     jq '(.sources[] | select(.id == "pipewire-screen-capture-source") | .settings.RestoreToken) = "portal-token-123" |
-        .transition_duration = 987' \
+        .transition_duration = 987 |
+        .sources |= map(select(.name != "Twitch Chat")) |
+        (.sources[] | select(.name == "Programming") | .settings.items) |=
+          map(select(.source_uuid != "99999999-9999-4999-8999-999999999999"))' \
       "${sceneTemplate}" > "$sceneFile"
     DRY_RUN_CMD= ${pkgs.runtimeShell} "$activation"
     jq -e '.sources[] | select(.id == "pipewire-screen-capture-source") | .settings.RestoreToken == "portal-token-123"' \
@@ -86,6 +89,9 @@ pkgs.runCommand "streaming-obs-module-check"
     jq -e '.transition_duration == 987' "$sceneFile"
     jq -e '.sources[] | select(.name == "Twitch Chat") |
       .settings.url == "https://nightdev.com/hosted/obschat?channel=test_channel&style=clear&fade=30&bot_activity=false&prevent_clipping=true"' \
+      "$sceneFile"
+    jq -e '.sources[] | select(.name == "Programming") | [.settings.items[] |
+      select(.source_uuid == "99999999-9999-4999-8999-999999999999")] | length == 1' \
       "$sceneFile"
     startingSoonShader="$(jq -r '.sources[] | select(.name == "Synthwave Terrain") | .settings.local_file' "$sceneFile")"
     brbShader="$(jq -r '.sources[] | select(.name == "Cosmic Strings") | .settings.local_file' "$sceneFile")"
