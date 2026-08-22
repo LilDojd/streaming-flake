@@ -107,7 +107,7 @@
       "id": "browser_source",
       "versioned_id": "browser_source",
       "settings": {
-        "url": "https://nightdev.com/hosted/obschat?channel=yawnere&style=clear&fade=30&bot_activity=false&prevent_clipping=true",
+        "url": "",
         "width": 520,
         "height": 620,
         "shutdown": true,
