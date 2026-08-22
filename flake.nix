@@ -47,6 +47,18 @@
                 channel = "test_channel";
                 chat.enable = true;
               };
+              alerts = {
+                enable = true;
+                urlFile = "/run/agenix/streamAlertsUrl";
+              };
+              accessibility = {
+                captions.enable = true;
+                keystrokeCallouts.enable = true;
+              };
+              webSocket = {
+                enable = true;
+                passwordFile = "/run/agenix/obsWebSocketPassword";
+              };
             };
           }
         ];

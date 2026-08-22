@@ -6,6 +6,9 @@
 }:
 let
   cfg = config.programs.streaming-obs;
+  between =
+    minimum: maximum: value:
+    value >= minimum && value <= maximum;
   profileDirectory = "obs-studio/basic/profiles/${cfg.profileName}";
   sceneTemplate = ./scenes.json;
   shaderAssets = import ./shader-assets.nix { inherit pkgs; };
@@ -107,6 +110,121 @@ let
     obs-source-record
     obs-composite-blur
   ];
+  microphoneFilters = [
+    {
+      name = "Mic Noise Suppression";
+      uuid = "19191919-1111-4111-8111-111111111111";
+      id = "noise_suppress_filter";
+      versioned_id = "noise_suppress_filter_v2";
+      settings.method = cfg.audio.microphone.filters.noiseSuppressionMethod;
+      enabled = true;
+      hotkeys = { };
+    }
+    {
+      name = "Mic Expander";
+      uuid = "19191919-2222-4222-8222-222222222222";
+      id = "expander_filter";
+      versioned_id = "expander_filter";
+      settings = {
+        presets = "expander";
+        ratio = cfg.audio.microphone.filters.expander.ratio;
+        threshold = cfg.audio.microphone.filters.expander.threshold;
+        attack_time = cfg.audio.microphone.filters.expander.attackTime;
+        release_time = cfg.audio.microphone.filters.expander.releaseTime;
+        output_gain = 0.0;
+        detector = "RMS";
+      };
+      enabled = true;
+      hotkeys = { };
+    }
+    {
+      name = "Mic Compressor";
+      uuid = "19191919-3333-4333-8333-333333333333";
+      id = "compressor_filter";
+      versioned_id = "compressor_filter";
+      settings = {
+        ratio = cfg.audio.microphone.filters.compressor.ratio;
+        threshold = cfg.audio.microphone.filters.compressor.threshold;
+        attack_time = cfg.audio.microphone.filters.compressor.attackTime;
+        release_time = cfg.audio.microphone.filters.compressor.releaseTime;
+        output_gain = cfg.audio.microphone.filters.compressor.outputGain;
+        sidechain_source = "none";
+      };
+      enabled = true;
+      hotkeys = { };
+    }
+    {
+      name = "Mic Limiter";
+      uuid = "19191919-4444-4444-8444-444444444444";
+      id = "limiter_filter";
+      versioned_id = "limiter_filter";
+      settings = {
+        threshold = cfg.audio.microphone.filters.limiterThreshold;
+        release_time = 60;
+      };
+      enabled = true;
+      hotkeys = { };
+    }
+  ];
+  cleanRecordingFilter = {
+    name = "Clean Recording";
+    uuid = "18181818-1818-4818-8818-181818181818";
+    id = "source_record_filter";
+    versioned_id = "source_record_filter";
+    enabled = true;
+    hotkeys = { };
+    settings = {
+      record_mode =
+        {
+          off = 0;
+          always = 1;
+          streaming = 2;
+          recording = 3;
+          either = 4;
+        }
+        .${cfg.cleanRecording.mode};
+      stream_mode = 0;
+      path = cfg.cleanRecording.directory;
+      filename_formatting = cfg.cleanRecording.filenameFormatting;
+      rec_format = "mkv";
+      encoder = "nvenc";
+      rate_control = "CQP";
+      cqp = cfg.cleanRecording.cqp;
+      preset = "p6";
+      tune = "hq";
+      multipass = "qres";
+      profile = "high";
+      lookahead = false;
+      bf = 2;
+      audio_encoder = "ffmpeg_aac";
+      audio_bitrate = 160;
+      different_audio = true;
+      audio_track = -1;
+      scale = false;
+      frame_rate_divisor = 0;
+      replay_buffer = false;
+      split_file = false;
+      remove_after_record = false;
+      record_max_seconds = 0;
+      backgroundColor = 4278190080;
+    };
+  };
+  pythonWithObs = pkgs.python3.withPackages (pythonPackages: [ pythonPackages.obsws-python ]);
+  obsControl = pkgs.writeShellApplication {
+    name = "streaming-obs-control";
+    runtimeInputs = [ pythonWithObs ];
+    text = ''
+      export STREAMING_OBS_PASSWORD_FILE=${lib.escapeShellArg (toString cfg.webSocket.passwordFile)}
+      export STREAMING_OBS_HOST=${lib.escapeShellArg cfg.webSocket.host}
+      export STREAMING_OBS_PORT=${toString cfg.webSocket.port}
+      export STREAMING_OBS_TIMEOUT=${toString cfg.webSocket.timeout}
+      export STREAMING_OBS_PRIVACY_MUTE_MIC=${if cfg.privacy.muteMicrophone then "1" else "0"}
+      export STREAMING_OBS_PRIVACY_STOP_CLEAN_RECORDING=${
+        if cfg.privacy.stopCleanRecording then "1" else "0"
+      }
+      exec python ${./obs-control.py} "$@"
+    '';
+  };
 in
 {
   imports = [
@@ -162,6 +280,189 @@ in
         type = lib.types.ints.positive;
         default = 60;
         description = "Stream frame rate.";
+      };
+    };
+
+    secondMonitor.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to install a separately selectable second-monitor capture scene.";
+    };
+
+    privacy = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to install the capture-free Privacy scene on Ctrl+Shift+F8.";
+      };
+      text = lib.mkOption {
+        type = lib.types.str;
+        default = "PRIVACY MODE";
+        description = "Text displayed by the Privacy scene.";
+      };
+      muteMicrophone = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Mute the microphone when privacy mode is entered through WebSocket control.";
+      };
+      stopCleanRecording = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Stop Source Record clean recording when privacy mode is entered through WebSocket control.";
+      };
+    };
+
+    audio.microphone.filters = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Apply RNNoise, expander, compressor, and limiter microphone filters.";
+      };
+      noiseSuppressionMethod = lib.mkOption {
+        type = lib.types.enum [
+          "rnnoise"
+          "speex"
+        ];
+        default = "rnnoise";
+        description = "OBS microphone noise suppression method.";
+      };
+      expander = {
+        ratio = lib.mkOption {
+          type = with lib.types; either int float;
+          default = 2.0;
+        };
+        threshold = lib.mkOption {
+          type = with lib.types; either int float;
+          default = -45.0;
+          description = "Expander threshold in dB.";
+        };
+        attackTime = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 10;
+          description = "Expander attack in milliseconds.";
+        };
+        releaseTime = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 100;
+          description = "Expander release in milliseconds.";
+        };
+      };
+      compressor = {
+        ratio = lib.mkOption {
+          type = with lib.types; either int float;
+          default = 3.0;
+        };
+        threshold = lib.mkOption {
+          type = with lib.types; either int float;
+          default = -18.0;
+          description = "Compressor threshold in dB.";
+        };
+        attackTime = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 6;
+          description = "Compressor attack in milliseconds.";
+        };
+        releaseTime = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 80;
+          description = "Compressor release in milliseconds.";
+        };
+        outputGain = lib.mkOption {
+          type = with lib.types; either int float;
+          default = 0.0;
+          description = "Compressor make-up gain in dB.";
+        };
+      };
+      limiterThreshold = lib.mkOption {
+        type = with lib.types; either int float;
+        default = -1.0;
+        description = "Limiter threshold in dB.";
+      };
+    };
+
+    cleanRecording = {
+      enable = lib.mkEnableOption "a clean code recording using the Source Record plugin" // {
+        default = true;
+      };
+      directory = lib.mkOption {
+        type = lib.types.str;
+        default = "${cfg.recordingDirectory}/clean";
+        description = "Directory for clean recordings without stream overlays.";
+      };
+      mode = lib.mkOption {
+        type = lib.types.enum [
+          "off"
+          "always"
+          "streaming"
+          "recording"
+          "either"
+        ];
+        default = "recording";
+        description = "Source Record lifecycle mode. Use off with manual WebSocket controls.";
+      };
+      filenameFormatting = lib.mkOption {
+        type = lib.types.str;
+        default = "clean-%CCYY-%MM-%DD-%hh-%mm-%ss";
+      };
+      cqp = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 20;
+      };
+    };
+
+    alerts = {
+      enable = lib.mkEnableOption "an alert browser source";
+      urlFile = lib.mkOption {
+        type = with lib.types; nullOr str;
+        default = null;
+        description = "Runtime file containing the alert widget URL, keeping widget tokens out of the Nix store.";
+      };
+    };
+
+    accessibility = {
+      captions = {
+        enable = lib.mkEnableOption "live captions read from a runtime text file";
+        textFile = lib.mkOption {
+          type = lib.types.str;
+          default =
+            if config.home.uid == null then
+              "${config.xdg.cacheHome}/streaming-obs/captions.txt"
+            else
+              "/run/user/${toString config.home.uid}/streaming-obs/captions.txt";
+          defaultText = lib.literalExpression ''
+            "/run/user/''${toString config.home.uid}/streaming-obs/captions.txt"
+          '';
+          description = "Transient UTF-8 caption file updated atomically by an external caption producer.";
+        };
+      };
+      keystrokeCallouts.enable = lib.mkEnableOption "WebSocket-updated keystroke callouts";
+      showCursor = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Show the cursor in both PipeWire monitor capture sources.";
+      };
+    };
+
+    webSocket = {
+      enable = lib.mkEnableOption "authenticated OBS WebSocket control";
+      passwordFile = lib.mkOption {
+        type = with lib.types; nullOr str;
+        default = null;
+        description = "Runtime password file for OBS WebSocket; never copied into the Nix store.";
+      };
+      host = lib.mkOption {
+        type = lib.types.str;
+        default = "127.0.0.1";
+        description = "OBS WebSocket host used by the control client.";
+      };
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 4455;
+      };
+      timeout = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 3;
+        description = "WebSocket client timeout in seconds.";
       };
     };
 
@@ -269,6 +570,36 @@ in
             assertion = !cfg.twitch.chat.enable || cfg.twitch.channel != null || cfg.twitch.chat.url != null;
             message = "Set programs.streaming-obs.twitch.channel or twitch.chat.url when the chat source is enabled.";
           }
+          {
+            assertion = !cfg.alerts.enable || cfg.alerts.urlFile != null;
+            message = "programs.streaming-obs.alerts.urlFile must be set when alerts are enabled.";
+          }
+          {
+            assertion = !cfg.webSocket.enable || cfg.webSocket.passwordFile != null;
+            message = "programs.streaming-obs.webSocket.passwordFile must be set when WebSocket control is enabled.";
+          }
+          {
+            assertion = !cfg.accessibility.keystrokeCallouts.enable || cfg.webSocket.enable;
+            message = "WebSocket control must be enabled for keystroke callouts.";
+          }
+          {
+            assertion =
+              between 1 32 cfg.audio.microphone.filters.expander.ratio
+              && between (-60) 0 cfg.audio.microphone.filters.expander.threshold
+              && between 1 500 cfg.audio.microphone.filters.expander.attackTime
+              && between 1 1000 cfg.audio.microphone.filters.expander.releaseTime
+              && between 1 32 cfg.audio.microphone.filters.compressor.ratio
+              && between (-60) 0 cfg.audio.microphone.filters.compressor.threshold
+              && between 1 500 cfg.audio.microphone.filters.compressor.attackTime
+              && between 1 1000 cfg.audio.microphone.filters.compressor.releaseTime
+              && between (-32) 32 cfg.audio.microphone.filters.compressor.outputGain
+              && between (-60) 0 cfg.audio.microphone.filters.limiterThreshold;
+            message = "Microphone filter settings are outside OBS-supported ranges.";
+          }
+          {
+            assertion = between 1 51 cfg.cleanRecording.cqp;
+            message = "programs.streaming-obs.cleanRecording.cqp must be between 1 and 51.";
+          }
         ];
 
         xdg.configFile = {
@@ -282,6 +613,8 @@ in
           package = pkgs.obs-studio.override { cudaSupport = true; };
           plugins = lib.unique (defaultPlugins ++ cfg.extraPlugins);
         };
+
+        home.packages = lib.optional cfg.webSocket.enable obsControl;
       }
 
       (lib.mkIf cfg.scenes.enable {
@@ -294,53 +627,99 @@ in
           userConfig="$configDir/user.ini"
 
           if [[ -z "$DRY_RUN_CMD" ]]; then
-            install -d -m 0700 "$sceneDir"
+            install -d -m 0700 "$sceneDir" ${lib.escapeShellArg cfg.cleanRecording.directory}
             sourceScene=${sceneTemplate}
+            primaryRestoreToken=""
+            secondaryRestoreToken=""
+            shouldBackup=false
+
             if [[ -f "$sceneFile" ]]; then
+              primaryRestoreToken="$(${lib.getExe pkgs.jq} -r \
+                '.sources[] | select(.uuid == "33333333-3333-4333-8333-333333333333") | .settings.RestoreToken // ""' \
+                "$sceneFile")"
+              secondaryRestoreToken="$(${lib.getExe pkgs.jq} -r \
+                '.sources[] | select(.uuid == "cccccccc-cccc-4ccc-8ccc-cccccccccccc") | .settings.RestoreToken // ""' \
+                "$sceneFile")"
+
               if ${lib.boolToString cfg.scenes.overwrite}; then
-                if ${lib.boolToString cfg.scenes.backup}; then
-                  cp --preserve=mode,timestamps "$sceneFile" "$sceneFile.backup"
-                fi
+                shouldBackup=true
               else
                 sourceScene="$sceneFile"
+                if [[ "$(${lib.getExe pkgs.jq} -r '.modules["streaming-flake"].version // 0' "$sceneFile")" -lt 3 ]]; then
+                  shouldBackup=true
+                fi
               fi
+            fi
+
+            if $shouldBackup && ${lib.boolToString cfg.scenes.backup}; then
+              cp --preserve=mode,timestamps "$sceneFile" "$sceneFile.backup"
+            fi
+
+            temporaryAlertsUrlFile=""
+            if ${lib.boolToString cfg.alerts.enable}; then
+              alertsUrlFile=${
+                lib.escapeShellArg (if cfg.alerts.urlFile == null then "" else cfg.alerts.urlFile)
+              }
+              if [[ ! -r "$alertsUrlFile" ]]; then
+                printf 'OBS alerts URL file is not readable: %s\n' "$alertsUrlFile" >&2
+                exit 1
+              fi
+              if [[ -z "$(tr -d '\r\n' < "$alertsUrlFile")" ]]; then
+                printf 'OBS alerts URL file is empty: %s\n' "$alertsUrlFile" >&2
+                exit 1
+              fi
+            else
+              temporaryAlertsUrlFile="$sceneDir/.alerts-url.empty"
+              install -m 0600 /dev/null "$temporaryAlertsUrlFile"
+              alertsUrlFile="$temporaryAlertsUrlFile"
+            fi
+
+            if ${lib.boolToString cfg.accessibility.captions.enable}; then
+              captionFile=${lib.escapeShellArg cfg.accessibility.captions.textFile}
+              install -d -m 0700 "$(dirname "$captionFile")"
+              if [[ -e "$captionFile" && ( -L "$captionFile" || ! -f "$captionFile" ) ]]; then
+                printf 'OBS caption path is not a regular file: %s\n' "$captionFile" >&2
+                exit 1
+              fi
+              if [[ ! -e "$captionFile" ]]; then
+                install -m 0600 /dev/null "$captionFile"
+              fi
+              chmod 0600 "$captionFile"
             fi
 
             temporaryScene="$sceneFile.new"
             ${lib.getExe pkgs.jq} \
+              --from-file ${./scene-transform.jq} \
               --arg collectionName "$sceneCollection" \
               --arg synthwaveShader "${shaderAssets}/synthwave.html" \
               --arg cosmicShader "${shaderAssets}/cosmic.html" \
+              --arg primaryRestoreToken "$primaryRestoreToken" \
+              --arg secondaryRestoreToken "$secondaryRestoreToken" \
               --arg chatUrl ${lib.escapeShellArg chatUrl} \
               --arg chatCss ${lib.escapeShellArg cfg.twitch.chat.css} \
+              --rawfile alertsUrl "$alertsUrlFile" \
+              --arg captionsFile ${lib.escapeShellArg cfg.accessibility.captions.textFile} \
+              --arg privacyText ${lib.escapeShellArg cfg.privacy.text} \
               --argjson chatEnabled ${lib.boolToString cfg.twitch.chat.enable} \
-              --slurpfile template ${sceneTemplate} \
+              --argjson alertsEnabled ${lib.boolToString cfg.alerts.enable} \
+              --argjson captionsEnabled ${lib.boolToString cfg.accessibility.captions.enable} \
+              --argjson keystrokesEnabled ${lib.boolToString cfg.accessibility.keystrokeCallouts.enable} \
+              --argjson secondMonitorEnabled ${lib.boolToString cfg.secondMonitor.enable} \
+              --argjson privacyEnabled ${lib.boolToString cfg.privacy.enable} \
+              --argjson micFiltersEnabled ${lib.boolToString cfg.audio.microphone.filters.enable} \
+              --argjson cleanRecordingEnabled ${lib.boolToString cfg.cleanRecording.enable} \
+              --argjson showCursor ${lib.boolToString cfg.accessibility.showCursor} \
+              --argjson micFilters ${lib.escapeShellArg (builtins.toJSON microphoneFilters)} \
+              --argjson cleanRecordingFilter ${lib.escapeShellArg (builtins.toJSON cleanRecordingFilter)} \
               --argjson width ${toString cfg.video.baseWidth} \
               --argjson height ${toString cfg.video.baseHeight} \
-              '.name = $collectionName |
-               (.sources[] | select(.name == "Synthwave Terrain") | .settings) |=
-                 (.local_file = $synthwaveShader | .width = $width | .height = $height) |
-               (.sources[] | select(.name == "Cosmic Strings") | .settings) |=
-                 (.local_file = $cosmicShader | .width = $width | .height = $height) |
-               if $chatEnabled then
-                 (if any(.sources[]; .name == "Twitch Chat") then . else
-                   .sources += [($template[0].sources[] | select(.name == "Twitch Chat"))]
-                 end) |
-                 (.sources[] | select(.name == "Programming") | .settings.items) |=
-                   (if any(.[]; .source_uuid == "99999999-9999-4999-8999-999999999999") then . else
-                     . + [($template[0].sources[] | select(.name == "Programming") |
-                       .settings.items[] | select(.source_uuid == "99999999-9999-4999-8999-999999999999"))]
-                   end) |
-                 (.sources[] | select(.name == "Twitch Chat") | .settings) |=
-                   (.url = $chatUrl | .css = $chatCss)
-               else
-                 .sources |= map(select(.name != "Twitch Chat")) |
-                 (.sources[] | select(.name == "Programming") | .settings.items) |=
-                   map(select(.source_uuid != "99999999-9999-4999-8999-999999999999"))
-               end' \
+              --slurpfile template ${sceneTemplate} \
               "$sourceScene" > "$temporaryScene"
             chmod 0600 "$temporaryScene"
             mv "$temporaryScene" "$sceneFile"
+            if [[ -n "$temporaryAlertsUrlFile" ]]; then
+              rm -f "$temporaryAlertsUrlFile"
+            fi
 
             touch "$userConfig"
             ${lib.getExe pkgs.crudini} --set "$userConfig" Basic Profile "$profileName"
@@ -350,6 +729,56 @@ in
           fi
         '';
       })
+
+      {
+        home.activation.writeObsWebSocket = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          if [[ -z "$DRY_RUN_CMD" ]]; then
+            configuredPasswordFile=${
+              lib.escapeShellArg (if cfg.webSocket.passwordFile == null then "" else cfg.webSocket.passwordFile)
+            }
+            pluginDir="${config.xdg.configHome}/obs-studio/plugin_config/obs-websocket"
+            configFile="$pluginDir/config.json"
+            temporaryConfig="$pluginDir/config.json.new"
+            temporaryPasswordFile=""
+            install -d -m 0700 "$pluginDir"
+
+            if ${lib.boolToString cfg.webSocket.enable}; then
+              passwordFile="$configuredPasswordFile"
+              if [[ ! -r "$passwordFile" ]]; then
+                printf 'OBS WebSocket password file is not readable: %s\n' "$passwordFile" >&2
+                exit 1
+              fi
+              if [[ -z "$(tr -d '\r\n' < "$passwordFile")" ]]; then
+                printf 'OBS WebSocket password file is empty: %s\n' "$passwordFile" >&2
+                exit 1
+              fi
+            else
+              temporaryPasswordFile="$pluginDir/.password.empty"
+              install -m 0600 /dev/null "$temporaryPasswordFile"
+              passwordFile="$temporaryPasswordFile"
+            fi
+
+            umask 077
+            ${lib.getExe pkgs.jq} -n \
+              --rawfile password "$passwordFile" \
+              --argjson enabled ${lib.boolToString cfg.webSocket.enable} \
+              --argjson port ${toString cfg.webSocket.port} \
+              '{
+                first_load: false,
+                server_enabled: $enabled,
+                server_port: $port,
+                alerts_enabled: false,
+                auth_required: $enabled,
+                server_password: ($password | sub("\\r?\\n$"; ""))
+              }' > "$temporaryConfig"
+            chmod 0600 "$temporaryConfig"
+            mv "$temporaryConfig" "$configFile"
+            if [[ -n "$temporaryPasswordFile" ]]; then
+              rm -f "$temporaryPasswordFile"
+            fi
+          fi
+        '';
+      }
 
       (lib.mkIf cfg.twitch.enable {
         home.activation.writeTwitchService = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
