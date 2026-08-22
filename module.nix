@@ -104,6 +104,28 @@ let
       cqp = 20;
     }
   ) cfg.extraRecordEncoderSettings;
+  baseObsPackage = pkgs.obs-studio.override { cudaSupport = true; };
+  obsPackage =
+    if cfg.graphics.nvidiaOnly then
+      pkgs.symlinkJoin {
+        name = "obs-studio-nvidia-only";
+        paths = [ baseObsPackage ];
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          wrapProgram "$out/bin/obs" \
+            --set __EGL_VENDOR_LIBRARY_FILENAMES /run/opengl-driver/share/glvnd/egl_vendor.d/10_nvidia.json \
+            --set __GLX_VENDOR_LIBRARY_NAME nvidia \
+            --set __NV_PRIME_RENDER_OFFLOAD 1 \
+            --set __VK_LAYER_NV_optimus NVIDIA_only \
+            --set GBM_BACKEND nvidia-drm \
+            --set VK_DRIVER_FILES /run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
+        '';
+        meta = baseObsPackage.meta // {
+          mainProgram = "obs";
+        };
+      }
+    else
+      baseObsPackage;
   defaultPlugins = with pkgs.obs-studio-plugins; [
     obs-pipewire-audio-capture
     obs-source-record
@@ -252,6 +274,16 @@ in
       type = lib.types.str;
       default = "${config.xdg.userDirs.videos}/OBS";
       description = "Directory used for local recordings.";
+    };
+
+    graphics.nvidiaOnly = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Restrict OBS and its CEF browser subprocesses to NVIDIA's EGL and Vulkan
+        drivers. This prevents WebGL browser sources from selecting another GPU
+        independently of the OBS renderer on hybrid systems.
+      '';
     };
 
     video = {
@@ -609,7 +641,7 @@ in
 
         programs.obs-studio = {
           enable = true;
-          package = pkgs.obs-studio.override { cudaSupport = true; };
+          package = obsPackage;
           plugins = lib.unique (defaultPlugins ++ cfg.extraPlugins);
         };
 

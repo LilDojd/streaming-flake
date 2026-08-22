@@ -6,7 +6,8 @@
     alpha: false,
     antialias: false,
     desynchronized: false,
-    powerPreference: "default",
+    failIfMajorPerformanceCaveat: true,
+    powerPreference: "high-performance",
     preserveDrawingBuffer: true,
   });
   if (!gl) throw new Error("WebGL 2 is required");
@@ -73,7 +74,6 @@
       gl.uniform3f(resolution, canvas.width, canvas.height, 1);
       gl.uniform1f(time, now * 0.001);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
-      gl.flush();
       requestAnimationFrame(render);
     };
     render(performance.now());
@@ -249,7 +249,6 @@
       gl.uniform1f(shockwavePhase, (seconds % 4) / 4);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
-      gl.flush();
       requestAnimationFrame(render);
     };
     render(performance.now());

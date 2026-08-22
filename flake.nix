@@ -41,6 +41,7 @@
             };
             programs.streaming-obs = {
               enable = true;
+              graphics.nvidiaOnly = true;
               twitch = {
                 enable = true;
                 streamKeyFile = "/run/agenix/twitchStreamKey";

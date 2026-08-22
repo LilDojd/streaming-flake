@@ -23,10 +23,12 @@ assert cfg.programs.streaming-obs.twitch.streamKeyFile == "/run/agenix/twitchStr
 assert cfg.programs.streaming-obs.twitch.channel == "test_channel";
 assert cfg.programs.streaming-obs.twitch.chat.enable;
 assert cfg.programs.obs-studio.enable;
+assert cfg.programs.streaming-obs.graphics.nvidiaOnly;
 assert recordingCfg.programs.streaming-obs.enable;
 assert !recordingCfg.programs.streaming-obs.twitch.enable;
 assert !(recordingCfg.home.activation ? writeTwitchService);
 assert recordingCfg.programs.obs-studio.enable;
+assert !recordingCfg.programs.streaming-obs.graphics.nvidiaOnly;
 assert cfg.programs.obs-studio.plugins == expectedPlugins;
 pkgs.runCommand "streaming-obs-module-check"
   {
@@ -52,6 +54,11 @@ pkgs.runCommand "streaming-obs-module-check"
     grep -q '^RecTracks=7$' "$profile"
     grep -q '^AutoRemux=true$' "$profile"
     grep -q '^TrackIndex=1$' "$profile"
+    grep -q '__EGL_VENDOR_LIBRARY_FILENAMES' ${cfg.programs.obs-studio.package}/bin/obs
+    grep -q 'nvidia_icd.json' ${cfg.programs.obs-studio.package}/bin/obs
+    if grep -q '__EGL_VENDOR_LIBRARY_FILENAMES' ${recordingCfg.programs.obs-studio.package}/bin/obs; then
+      exit 1
+    fi
     jq -e '.rate_control == "CBR" and .bitrate == 6000 and .keyint_sec == 2' "$streamEncoder"
     jq -e '.rate_control == "CQP" and .cqp == 20' "$recordEncoder"
     jq -e '.name == "Programming" and .modules["streaming-flake"].version == 3' "${sceneTemplate}"
@@ -237,6 +244,8 @@ pkgs.runCommand "streaming-obs-module-check"
     node --check "$(dirname "$startingSoonShader")/shaders.js"
     grep -q 'synthwaveSkyFragment' "$(dirname "$startingSoonShader")/runner.js"
     grep -q 'shockwavePhase' "$(dirname "$startingSoonShader")/runner.js"
+    grep -q 'failIfMajorPerformanceCaveat: true' "$(dirname "$startingSoonShader")/runner.js"
+    grep -q 'powerPreference: "high-performance"' "$(dirname "$startingSoonShader")/runner.js"
     grep -q 'preserveDrawingBuffer: true' "$(dirname "$startingSoonShader")/runner.js"
     grep -q 'webglcontextrestored' "$(dirname "$startingSoonShader")/runner.js"
     grep -q 'KMartianov/shader-desk' "$(dirname "$startingSoonShader")/ATTRIBUTION"
