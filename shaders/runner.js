@@ -181,17 +181,6 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.R8,
-      64,
-      128,
-      0,
-      gl.RED,
-      gl.UNSIGNED_BYTE,
-      audioHistory,
-    );
 
     const location = (name) => gl.getUniformLocation(program, name);
     const projectionLocation = location("projection");
@@ -234,7 +223,7 @@
       }
       gl.activeTexture(gl.TEXTURE2);
       gl.bindTexture(gl.TEXTURE_2D, audioTexture);
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 128, gl.RED, gl.UNSIGNED_BYTE, audioHistory);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 64, 128, 0, gl.RED, gl.UNSIGNED_BYTE, audioHistory);
       gl.clearColor(0.05, 0.01, 0.08, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
