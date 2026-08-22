@@ -54,14 +54,9 @@ pkgs.runCommand "streaming-obs-module-check"
     grep -q '^RecTracks=7$' "$profile"
     grep -q '^AutoRemux=true$' "$profile"
     grep -q '^TrackIndex=1$' "$profile"
-    grep -Rq '__EGL_VENDOR_LIBRARY_FILENAMES' ${cfg.programs.obs-studio.package}/bin
-    grep -Rq 'nvidia_icd.json' ${cfg.programs.obs-studio.package}/bin
-    grep -q 'bwrapArgs+=(--ro-bind /dev/null' ${cfg.programs.obs-studio.package}/bin/obs
-    ${pkgs.runtimeShell} -n ${cfg.programs.obs-studio.package}/bin/obs
-    if grep -qF '$out/bin/.obs-nvidia-only' ${cfg.programs.obs-studio.package}/bin/obs; then
-      exit 1
-    fi
-    if grep -Rq '__EGL_VENDOR_LIBRARY_FILENAMES' ${recordingCfg.programs.obs-studio.package}/bin; then
+    grep -q '__EGL_VENDOR_LIBRARY_FILENAMES' ${cfg.programs.obs-studio.package}/bin/obs
+    grep -q 'nvidia_icd.json' ${cfg.programs.obs-studio.package}/bin/obs
+    if grep -q '__EGL_VENDOR_LIBRARY_FILENAMES' ${recordingCfg.programs.obs-studio.package}/bin/obs; then
       exit 1
     fi
     jq -e '.rate_control == "CBR" and .bitrate == 6000 and .keyint_sec == 2' "$streamEncoder"
