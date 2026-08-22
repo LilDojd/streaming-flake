@@ -229,13 +229,16 @@ pkgs.runCommand "streaming-obs-module-check"
     startingSoonShader="$(jq -r '.sources[] | select(.name == "Synthwave Terrain") | .settings.local_file' "$sceneFile")"
     brbShader="$(jq -r '.sources[] | select(.name == "Cosmic Strings") | .settings.local_file' "$sceneFile")"
     jq -e 'all(.sources[] | select(.name == "Synthwave Terrain" or .name == "Cosmic Strings");
-      .settings.width == 1920 and .settings.height == 1080 and .settings.fps == 30)' "$sceneFile"
+      .settings.width == 1920 and .settings.height == 1080 and .settings.fps == 30 and
+      .settings.shutdown == true and .settings.restart_when_active == false)' "$sceneFile"
     test -r "$startingSoonShader"
     test -r "$brbShader"
     node --check "$(dirname "$startingSoonShader")/runner.js"
     node --check "$(dirname "$startingSoonShader")/shaders.js"
     grep -q 'synthwaveSkyFragment' "$(dirname "$startingSoonShader")/runner.js"
     grep -q 'shockwavePhase' "$(dirname "$startingSoonShader")/runner.js"
+    grep -q 'preserveDrawingBuffer: true' "$(dirname "$startingSoonShader")/runner.js"
+    grep -q 'webglcontextrestored' "$(dirname "$startingSoonShader")/runner.js"
     grep -q 'KMartianov/shader-desk' "$(dirname "$startingSoonShader")/ATTRIBUTION"
 
     printf '[Basic]\nProfile=DryRunSentinel\n' > "$userConfig"

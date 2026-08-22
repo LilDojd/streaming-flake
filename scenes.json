@@ -129,7 +129,7 @@
         "height": 1080,
         "fps": 30,
         "shutdown": true,
-        "restart_when_active": true
+        "restart_when_active": false
       },
       "mixers": 0,
       "volume": 1,
@@ -149,7 +149,7 @@
         "height": 1080,
         "fps": 30,
         "shutdown": true,
-        "restart_when_active": true
+        "restart_when_active": false
       },
       "mixers": 0,
       "volume": 1,

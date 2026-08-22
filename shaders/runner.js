@@ -4,10 +4,15 @@
   const canvas = document.getElementById("shader");
   const gl = canvas.getContext("webgl2", {
     alpha: false,
-    antialias: true,
-    powerPreference: "high-performance",
+    antialias: false,
+    desynchronized: false,
+    powerPreference: "default",
+    preserveDrawingBuffer: true,
   });
   if (!gl) throw new Error("WebGL 2 is required");
+
+  canvas.addEventListener("webglcontextlost", (event) => event.preventDefault());
+  canvas.addEventListener("webglcontextrestored", () => window.location.reload());
 
   const shaders = window.shaderDeskShaders;
   const fullscreenVertex = `#version 300 es
@@ -63,9 +68,12 @@
 
     const render = (now) => {
       resize();
+      gl.clearColor(0, 0, 0, 1);
+      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform3f(resolution, canvas.width, canvas.height, 1);
       gl.uniform1f(time, now * 0.001);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
+      gl.flush();
       requestAnimationFrame(render);
     };
     render(performance.now());
@@ -241,6 +249,7 @@
       gl.uniform1f(shockwavePhase, (seconds % 4) / 4);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
+      gl.flush();
       requestAnimationFrame(render);
     };
     render(performance.now());

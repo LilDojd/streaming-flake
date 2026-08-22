@@ -104,12 +104,16 @@ end |
   (.local_file = $synthwaveShader |
     .width = $shaderWidth |
     .height = $shaderHeight |
-    .fps = $shaderFps) |
+    .fps = $shaderFps |
+    .shutdown = true |
+    .restart_when_active = false) |
 (.sources[] | select(.name == "Cosmic Strings") | .settings) |=
   (.local_file = $cosmicShader |
     .width = $shaderWidth |
     .height = $shaderHeight |
-    .fps = $shaderFps) |
+    .fps = $shaderFps |
+    .shutdown = true |
+    .restart_when_active = false) |
 (.sources[] | select(.name == "Privacy Background") | .settings) |=
   (.width = $width | .height = $height) |
 (.sources[] | select(.name == "Intermission Text Backplate") | .settings) |=
