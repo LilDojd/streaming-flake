@@ -181,8 +181,21 @@
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.R8,
+      64,
+      128,
+      0,
+      gl.RED,
+      gl.UNSIGNED_BYTE,
+      audioHistory,
+    );
 
     const location = (name) => gl.getUniformLocation(program, name);
+    const projectionLocation = location("projection");
+    const timeLocation = location("time");
     const shockwavePhase = location("shockwave_phase");
     const identity = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
     const eye = [0, 2.2, 5];
@@ -221,7 +234,7 @@
       }
       gl.activeTexture(gl.TEXTURE2);
       gl.bindTexture(gl.TEXTURE_2D, audioTexture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, 64, 128, 0, gl.RED, gl.UNSIGNED_BYTE, audioHistory);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, 128, gl.RED, gl.UNSIGNED_BYTE, audioHistory);
       gl.clearColor(0.05, 0.01, 0.08, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -234,8 +247,8 @@
 
       gl.enable(gl.DEPTH_TEST);
       gl.useProgram(program);
-      gl.uniformMatrix4fv(location("projection"), false, perspective(Math.PI / 3, canvas.width / canvas.height, 0.1, 200));
-      gl.uniform1f(location("time"), seconds);
+      gl.uniformMatrix4fv(projectionLocation, false, perspective(Math.PI / 3, canvas.width / canvas.height, 0.1, 200));
+      gl.uniform1f(timeLocation, seconds);
       gl.uniform1f(shockwavePhase, (seconds % 4) / 4);
       gl.bindVertexArray(vao);
       gl.drawArrays(gl.TRIANGLES, 0, vertices.length / 6);
