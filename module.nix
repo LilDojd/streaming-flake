@@ -138,13 +138,13 @@ let
             bwrapArgs+=(--ro-bind /dev/null /dev/kfd)
           fi
 
-          exec @bwrap@ "''${bwrapArgs[@]}" @wrappedObs@ "$@"
+          scriptPath="$(@readlink@ -f "''${BASH_SOURCE[0]}")"
+          exec @bwrap@ "''${bwrapArgs[@]}" "''${scriptPath%/*}/.obs-nvidia-only" "$@"
           EOF
           substituteInPlace "$out/bin/obs" \
             --replace-fail @runtimeShell@ ${lib.escapeShellArg pkgs.runtimeShell} \
             --replace-fail @readlink@ ${lib.escapeShellArg (lib.getExe' pkgs.coreutils "readlink")} \
-            --replace-fail @bwrap@ ${lib.escapeShellArg (lib.getExe pkgs.bubblewrap)} \
-            --replace-fail @wrappedObs@ ${lib.escapeShellArg "$out/bin/.obs-nvidia-only"}
+            --replace-fail @bwrap@ ${lib.escapeShellArg (lib.getExe pkgs.bubblewrap)}
           chmod +x "$out/bin/obs"
         '';
         meta = baseObsPackage.meta // {

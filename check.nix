@@ -57,6 +57,10 @@ pkgs.runCommand "streaming-obs-module-check"
     grep -Rq '__EGL_VENDOR_LIBRARY_FILENAMES' ${cfg.programs.obs-studio.package}/bin
     grep -Rq 'nvidia_icd.json' ${cfg.programs.obs-studio.package}/bin
     grep -q 'bwrapArgs+=(--ro-bind /dev/null' ${cfg.programs.obs-studio.package}/bin/obs
+    ${pkgs.runtimeShell} -n ${cfg.programs.obs-studio.package}/bin/obs
+    if grep -qF '$out/bin/.obs-nvidia-only' ${cfg.programs.obs-studio.package}/bin/obs; then
+      exit 1
+    fi
     if grep -Rq '__EGL_VENDOR_LIBRARY_FILENAMES' ${recordingCfg.programs.obs-studio.package}/bin; then
       exit 1
     fi
