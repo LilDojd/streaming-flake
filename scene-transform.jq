@@ -134,9 +134,23 @@ reduce managed_scene_names[] as $name (
     end) |
     (.sources[] | select(.uuid == $managed.uuid) | .settings.items[] |
       select(.source_uuid == $item.source_uuid and .bounds_type? == 2) | .bounds) =
-      { x: $width, y: $height }
+      (if $item.source_uuid == "cccccccc-cccc-4ccc-8ccc-cccccccccccc" then
+        { x: $height, y: $width }
+      else
+        { x: $width, y: $height }
+      end)
   )
 ) |
+
+(.sources[] | select(.name == "[Component] Secondary Monitor") | .settings.items[] |
+  select(.source_uuid == "cccccccc-cccc-4ccc-8ccc-cccccccccccc")) |=
+  (del(.pos_rel, .scale_rel, .bounds_rel, .scale_ref) |
+    .align = 0 |
+    .rot = 90 |
+    .bounds_align = 0 |
+    .bounds_type = 2 |
+    .pos = { x: ($width / 2), y: ($height / 2) } |
+    .bounds = { x: $height, y: $width }) |
 
 if $chatEnabled then
   upsert_overlay_item("99999999-9999-4999-8999-999999999999") |

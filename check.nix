@@ -65,6 +65,9 @@ pkgs.runCommand "streaming-obs-module-check"
     jq -e '[.sources[].uuid] as $uuids | all(.sources[] | select(.id == "scene") | .settings.items[]; .source_uuid as $uuid | $uuids | index($uuid) != null)' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Programming") | [.settings.items[].source_uuid] == ["dddddddd-dddd-4ddd-8ddd-dddddddddddd", "ffffffff-ffff-4fff-8fff-ffffffffffff"]' "${sceneTemplate}"
     jq -e '.sources[] | select(.name == "Second Monitor") | [.settings.items[].source_uuid] == ["eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", "ffffffff-ffff-4fff-8fff-ffffffffffff"]' "${sceneTemplate}"
+    jq -e '.sources[] | select(.name == "[Component] Secondary Monitor") | .settings.items[0] |
+      .rot == 90 and .align == 0 and .pos == {x: 1280, y: 720} and
+      .bounds == {x: 1440, y: 2560}' "${sceneTemplate}"
     jq -e '.sources as $sources | .sources[] | select(.name == "Privacy") |
       all(.settings.items[]; .source_uuid as $uuid | $sources[] | select(.uuid == $uuid) |
         .id != "pipewire-screen-capture-source" and .id != "browser_source" and .id != "scene")' "${sceneTemplate}"
@@ -165,6 +168,9 @@ pkgs.runCommand "streaming-obs-module-check"
     jq -e '.sources[] | select(.name == "Stream Alerts") | .settings.url == "https://alerts.example.invalid/widget/runtime-token"' "$sceneFile"
     jq -e '.sources[] | select(.name == "Live Captions") | .settings.text_file == $captionFile' --arg captionFile "$captionFile" "$sceneFile"
     jq -e '[.sources[] | select(.name == "Second Monitor" or .name == "Privacy")] | length == 2' "$sceneFile"
+    jq -e '.sources[] | select(.name == "[Component] Secondary Monitor") | .settings.items[0] |
+      .rot == 90 and .align == 0 and .pos == {x: 1280, y: 720} and
+      .bounds == {x: 1440, y: 2560}' "$sceneFile"
     jq -e '.sources[] | select(.name == "[Component] Primary Monitor") | .filters[0].settings.path == $path' --arg path "$cleanDirectory" "$sceneFile"
     jq -e '[.AuxAudioDevice1.filters[].id] == ["noise_suppress_filter", "expander_filter", "compressor_filter", "limiter_filter", "gain_filter"]' "$sceneFile"
     test -e "$sceneFile.backup"

@@ -425,16 +425,18 @@
             "source_uuid": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
             "visible": true,
             "id": 1,
-            "align": 5,
+            "align": 0,
             "bounds_type": 2,
             "bounds": {
-              "x": 2560,
-              "y": 1440
+              "x": 1440,
+              "y": 2560
             },
             "pos": {
-              "x": 0,
-              "y": 0
-            }
+              "x": 1280,
+              "y": 720
+            },
+            "rot": 90,
+            "bounds_align": 0
           }
         ]
       },
