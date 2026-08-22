@@ -119,6 +119,33 @@ let
             --set __VK_LAYER_NV_optimus NVIDIA_only \
             --set GBM_BACKEND nvidia-drm \
             --set VK_DRIVER_FILES /run/opengl-driver/share/vulkan/icd.d/nvidia_icd.json
+
+          mv "$out/bin/obs" "$out/bin/.obs-nvidia-only"
+          cat > "$out/bin/obs" <<'EOF'
+          #!@runtimeShell@
+          set -euo pipefail
+          shopt -s nullglob
+
+          bwrapArgs=(--bind / /)
+          for node in /dev/dri/card* /dev/dri/renderD*; do
+            deviceName="''${node##*/}"
+            driver="$(@readlink@ -f "/sys/class/drm/$deviceName/device/driver" 2>/dev/null || true)"
+            if [[ "''${driver##*/}" != nvidia ]]; then
+              bwrapArgs+=(--ro-bind /dev/null "$node")
+            fi
+          done
+          if [[ -e /dev/kfd ]]; then
+            bwrapArgs+=(--ro-bind /dev/null /dev/kfd)
+          fi
+
+          exec @bwrap@ "''${bwrapArgs[@]}" @wrappedObs@ "$@"
+          EOF
+          substituteInPlace "$out/bin/obs" \
+            --replace-fail @runtimeShell@ ${lib.escapeShellArg pkgs.runtimeShell} \
+            --replace-fail @readlink@ ${lib.escapeShellArg (lib.getExe' pkgs.coreutils "readlink")} \
+            --replace-fail @bwrap@ ${lib.escapeShellArg (lib.getExe pkgs.bubblewrap)} \
+            --replace-fail @wrappedObs@ ${lib.escapeShellArg "$out/bin/.obs-nvidia-only"}
+          chmod +x "$out/bin/obs"
         '';
         meta = baseObsPackage.meta // {
           mainProgram = "obs";
